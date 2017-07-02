@@ -3,7 +3,7 @@
 
   <groupId>com.eone</groupId>
   <artifactId>jenkins-demo</artifactId>
-  <version>1.1.5</version>
+  <version>1.1.5-SNAPSHOT</version>
   <packaging>war</packaging>
 
   <name>Jenkins Build Demo</name>
