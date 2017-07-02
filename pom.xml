@@ -51,6 +51,7 @@
         <version>2.5.3</version>
         <configuration>
           <tagNameFormat>v@{project.version}</tagNameFormat>
+          <scmCommentPrefix>#42${line.separator}</scmCommentPrefix>
         </configuration>
       </plugin>
       <plugin>
