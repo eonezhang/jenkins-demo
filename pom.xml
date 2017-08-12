@@ -8,14 +8,27 @@
   <name>Jenkins Build Demo</name>
 
   <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
   <scm>
     <connection>scm:git:git@github.com:eonezhang/jenkins-demo.git</connection>
     <developerConnection>scm:git:git@github.com:eonezhang/jenkins-demo.git</developerConnection>
     <url>https://github.com/eonezhang/jenkins-demo</url>
-    <tag>v1.0.0.0</tag>
+    <tag>HEAD</tag>
   </scm>
+  <developers>
+        <developer>
+            <email>yyong-zhang@hnair.com</email>
+            <id>eonezhang</id>
+            <name>eonezhang</name>
+            <url>https://github.com/eonezhang</url>
+            <timezone>+8</timezone>
+            <roles>
+                <role>java developer</role>
+            </roles>
+        </developer>
+    </developers>
 
   <dependencies>
     <dependency>
@@ -73,7 +86,7 @@
         <version>2.5.3</version>
         <configuration>
           <tagNameFormat>v@{project.version}</tagNameFormat>
-          <scmCommentPrefix>MAVEN RELEASE:${line.separator}</scmCommentPrefix>
+          <scmCommentPrefix>MAVEN RELEASE:</scmCommentPrefix>
         </configuration>
       </plugin>
       <plugin>
@@ -83,6 +96,7 @@
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
+          <encoding>${project.build.sourceEncoding}</encoding>
         </configuration>
       </plugin>
       <!-- <plugin>
@@ -105,17 +119,4 @@
       <!--</plugin>-->
     </plugins>
   </build>
-  <repositories>  
-        <repository>  
-            <id>nexus</id>  
-            <name>nexus</name>  
-            <url>http://192.168.5.4:10085/repository/maven-public/</url>  
-            <releases>  
-                <enabled>true</enabled>  
-            </releases>  
-            <snapshots>  
-                <enabled>true</enabled>  
-            </snapshots>  
-        </repository>  
-    </repositories>  
 </project>
