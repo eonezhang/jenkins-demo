@@ -3,9 +3,8 @@
 
   <groupId>com.eone</groupId>
   <artifactId>jenkins-demo</artifactId>
-  <version>1.0.0.1-SNAPSHOT</version>
+  <version>1.0.0.3-SNAPSHOT</version>
   <packaging>jar</packaging>
-
   <name>Jenkins Build Demo</name>
 
   <properties>
