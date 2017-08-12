@@ -4,7 +4,7 @@
   <groupId>com.eone</groupId>
   <artifactId>jenkins-demo</artifactId>
   <version>1.0.0.1-SNAPSHOT</version>
-  <packaging>war</packaging>
+  <packaging>jar</packaging>
 
   <name>Jenkins Build Demo</name>
 
@@ -25,9 +25,14 @@
       <version>4.0.0-b07</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>23.0</version>
+    </dependency>
   </dependencies>
 
-  <distributionManagement>
+  <!-- <distributionManagement>
     <repository>
       <id>dev.release</id>
       <url>file:${project.build.directory}/repository/</url>
@@ -36,7 +41,21 @@
       <id>oss-snapshot</id>
       <url>file:${project.build.directory}/snapshots/</url>
     </snapshotRepository>
-  </distributionManagement>
+  </distributionManagement> -->
+
+  <distributionManagement>  
+      <repository>  
+          <id>user-release</id>  
+          <name>User Project Release</name>  
+          <url>http://192.168.5.4:10085/repository/maven-releases/</url>  
+      </repository>  
+
+      <snapshotRepository>  
+          <id>user-snapshots</id>  
+          <name>User Project SNAPSHOTS</name>  
+          <url>http://192.168.5.4:10085/repository/maven-snapshots/</url>  
+      </snapshotRepository>  
+  </distributionManagement>  
 
   <build>
     <plugins>
@@ -87,4 +106,17 @@
       <!--</plugin>-->
     </plugins>
   </build>
+  <repositories>  
+        <repository>  
+            <id>nexus</id>  
+            <name>nexus</name>  
+            <url>http://192.168.5.4:10085/repository/maven-public/</url>  
+            <releases>  
+                <enabled>true</enabled>  
+            </releases>  
+            <snapshots>  
+                <enabled>true</enabled>  
+            </snapshots>  
+        </repository>  
+    </repositories>  
 </project>
