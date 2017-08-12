@@ -3,7 +3,7 @@
 
   <groupId>com.eone</groupId>
   <artifactId>jenkins-demo</artifactId>
-  <version>1.0.0.5</version>
+  <version>1.0.0.7-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Jenkins Build Demo</name>
 
@@ -15,7 +15,7 @@
     <connection>scm:git:git@github.com:eonezhang/jenkins-demo.git</connection>
     <developerConnection>scm:git:git@github.com:eonezhang/jenkins-demo.git</developerConnection>
     <url>https://github.com/eonezhang/jenkins-demo</url>
-    <tag>v1.0.0.5</tag>
+    <tag>HEAD</tag>
   </scm>
   <developers>
         <developer>
