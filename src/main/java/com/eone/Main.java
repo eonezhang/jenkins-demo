@@ -1,7 +1,7 @@
 package com.eone;
 
 public class Main {
-    private Main() {
+    Main() {
     }
 
     public static void main(String[] args) {

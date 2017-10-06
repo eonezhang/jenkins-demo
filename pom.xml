@@ -92,8 +92,8 @@
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>0.7.9</version>
         <configuration>
-          <destFile>${project.artifactId}/target/coverage/jacoco.exec</destFile>
-          <dataFile>${project.artifactId}/target/coverage/jacoco.exec</dataFile>
+          <destFile>target/coverage/jacoco.exec</destFile>
+          <dataFile>target/coverage/jacoco.exec</dataFile>
         </configuration>
 
         <executions>
