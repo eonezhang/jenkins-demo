@@ -238,8 +238,8 @@ def bumpReleaseVersion(String version) {
     // 1.0.0.2-SNAPSHOT -> 1.0.0.2
     // 1.1.0.0-SNAPSHOT
     def versions = [:]
-    if (version.endWith("SNAPSHOT")) {
-        version = version.replace("SNAPSHOT", "")
+    if (version.endWith("-SNAPSHOT")) {
+        version = version.replace("-SNAPSHOT", "")
     }
     versions['releaseVersion'] = version
     def v = version.split("\\.")
