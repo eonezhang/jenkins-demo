@@ -16,9 +16,6 @@ apply plugin: "jacoco"
 apply plugin: 'com.bmuschko.nexus'
 apply plugin: 'com.google.osdetector'
 
-group = 'com.eone'
-version = '1.0.0.13-SNAPSHOT'
-
 description = """Jenkins Build Demo"""
 
 ext {
