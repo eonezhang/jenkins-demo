@@ -6,7 +6,8 @@ public class Main {
 
     public static void main(String[] args) {
         Main main = new Main();
-        main.sum(1, 2);
+        int sum = main.sum(1, 2);
+        // System.out.println(sum);
     }
 
     public int sum(int a, int b) {

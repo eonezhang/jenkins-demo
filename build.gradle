@@ -1,0 +1,267 @@
+ buildscript {
+     repositories {
+         jcenter()
+     }
+     dependencies {
+        classpath 'com.google.gradle:osdetector-gradle-plugin:1.4.0'
+        classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
+     }
+ }
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'findbugs'
+apply plugin: 'checkstyle'
+apply plugin: "jacoco"
+apply plugin: 'com.bmuschko.nexus'
+apply plugin: 'com.google.osdetector'
+
+group = 'com.eone'
+version = '1.0.0.13-SNAPSHOT'
+
+description = """Jenkins Build Demo"""
+
+ext {
+    gitPath = getGitPath()
+}
+
+private def getGitPath() {
+    if (rootProject.hasProperty('gitPath')) {
+        return rootProject.property('gitPath')
+    }
+
+    // Find the location of the 'git' command.
+    try {
+        if (osdetector.os == 'windows') {
+            return executeCommand('where.exe', 'git.exe')
+        } else {
+            return executeCommand('which', 'git')
+        }
+    } catch (e) {
+        logger.debug('Git not available:', e)
+        return null
+    }
+}
+
+private static String executeCommand(String[] command) {
+    def proc = command.execute()
+    proc.waitFor()
+    if (proc.exitValue() != 0) {
+        throw new IOException(
+                "'${command}' exited with a non-zero exit code: ${proc.exitValue()}:" +
+                "${System.lineSeparator()}${proc.err.text}")
+    }
+
+    return proc.in.text.trim()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+checkstyle {
+    toolVersion = '8.5'
+    maxErrors = 50
+    maxWarnings = 50
+    configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+    reportsDir = file("$project.buildDir/checkstyleReports")
+}
+
+findbugs {
+    toolVersion = "3.0.1"
+    sourceSets = [sourceSets.main]
+    ignoreFailures = true
+    reportsDir = file("$project.buildDir/findbugsReports")
+    effort = "max"
+    showProgress = true
+    reportLevel = "medium"
+    omitVisitors = ["FindNonShortCircuit"]
+}
+
+jacoco {
+    toolVersion = "0.8.0"
+    reportsDir = file("$buildDir/jacoco/jacocoReports")
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled false
+        csv.enabled false
+        html.enabled true
+        html.destination file("${buildDir}/jacoco/jacocoHtml")
+    }
+}
+
+test {
+    jacoco {
+        append = false
+        destinationFile = file("$buildDir/jacoco/jacocoTest.exec")
+        classDumpDir = file("$buildDir/jacoco/classpathdumps")
+    }
+}
+
+
+task applicationCodeCoverageReport(type:JacocoReport){
+    sourceSets sourceSets.main
+}
+
+tasks.withType(Checkstyle) {
+    reports {
+        xml.enabled false
+        html.enabled true
+        html.stylesheet resources.text.fromFile('config/xsl/checkstyle.xsl')
+    }
+}
+
+tasks.withType(FindBugs) {
+	reports {
+		xml.enabled = false
+		html.enabled = true
+        html.stylesheet resources.text.fromFile('config/xsl/findbug.xsl')
+	}
+}
+
+test.finalizedBy jacocoTestReport
+
+task showTestReport(type:Exec, group:'Development', dependsOn: ['test', 'showCoverageReport']) {
+    workingDir "$project.buildDir"
+    commandLine "open", 'jacoco/jacocoHtml/index.html'
+}
+
+task showCoverageReport(type: Exec, group:'Development', dependsOn: ['test']) {
+    workingDir "$project.buildDir"
+    commandLine "open", 'reports/tests/test/index.html'
+}
+
+task showCheckstyleReport(type:Exec, group:'Development', dependsOn: ['checkstyleMain']) {
+    workingDir "$project.buildDir/checkstyleReports"
+    commandLine "open", 'main.html'
+}
+
+task showFindbugsReport(type:Exec, group:'Development', dependsOn: ['findbugsMain']) {
+    workingDir "$project.buildDir/findbugsReports"
+    commandLine "open", 'main.html'
+}
+
+task dev( group:'Development', dependsOn: ['classes', 'testClasses', 'showCheckstyleReport', 'showFindbugsReport', 'showTestReport']) {}
+task ci( group:'Development', dependsOn:['classes', 'testClasses', 'findbugsMain', 'checkstyleMain', 'test', 'jacocoTestReport']) {}
+
+task release(group: 'Publishing',
+             description: 'Releases a new version.') {
+    doLast {
+        if (gitPath == null) {
+            throw new InvalidUserDataException('Git is not available.')
+        }
+
+        if (!project.hasProperty('releaseVersion') || !project.hasProperty('nextVersion')) {
+            throw new InvalidUserDataException(
+                    "Specify 'releaseVersion' and 'nextVersion' properties.${System.lineSeparator()}" +
+                            'e.g. ./gradlew release -PreleaseVersion=0.1.2 -PnextVersion=0.1.3-SNAPSHOT')
+        }
+        def releaseVersion = project.property('releaseVersion')
+        def nextVersion = project.property('nextVersion')
+
+        // Validate the specified version numbers.
+        if (!(releaseVersion =~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/)) {
+            throw new InvalidUserDataException("invalid release version: ${releaseVersion}")
+        }
+        if (!(nextVersion =~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-SNAPSHOT$/)) {
+            throw new InvalidUserDataException("invalid next version: ${nextVersion}")
+        }
+
+        // Ensure the repository is upstream.
+        def repoUrl = executeCommand(gitPath, 'config', '--get', 'remote.origin.url').trim()
+        if (!(repoUrl =~ /github.com:eonezhang\/jenkins-demo\.git$/)) {
+            throw new InvalidUserDataException('Release must be performed at the upstream repository.')
+        }
+
+        // Ensure the repository is clean.
+        def gitStatusOut = executeCommand(gitPath, 'status', '--porcelain')
+        if (!gitStatusOut.empty) {
+            throw new InvalidUserDataException("Git repository is not clean:${System.lineSeparator()}${gitStatusOut}")
+        }
+
+        def tag = "$rootProject.name-$releaseVersion"
+        def gradlePropsFile = project.file("${project.projectDir}/gradle.properties")
+        def gradlePropsContent = gradlePropsFile.getText('ISO-8859-1')
+        def versionPattern = /\nversion=[0-9]+\.[0-9]+\.[0-9]+-SNAPSHOT(\r?\n)/
+        assert gradlePropsContent =~ versionPattern
+
+        // Update the version to the release version, commit and tag.
+        gradlePropsFile.write(gradlePropsContent.replaceFirst(versionPattern, "\nversion=${releaseVersion}\$1"), 'ISO-8859-1')
+        executeCommand(gitPath, 'add', gradlePropsFile.toString())
+        executeCommand(gitPath, 'commit', '-m', "Release $tag")
+        executeCommand(gitPath, 'tag', tag)
+
+        // Update the version to the next version.
+        executeCommand(gitPath, 'reset', '--hard', 'HEAD^')
+        gradlePropsFile.write(gradlePropsContent.replaceFirst(versionPattern, "\nversion=${nextVersion}\$1"), 'ISO-8859-1')
+        executeCommand(gitPath, 'add', gradlePropsFile.toString())
+
+        // Commit.
+        executeCommand(gitPath, 'commit', '-m', "Update the project version to ${nextVersion}")
+
+        // Push the commits and tags.
+        executeCommand(gitPath, 'push', 'origin')
+        executeCommand(gitPath, 'push', 'origin', tag)
+
+        println 'Release Done'
+    }
+}
+
+repositories {
+     maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
+     maven { url "http://10.71.88.241:8085/nexus/content/groups/public/" }
+     maven { url "http://repo.maven.apache.org/maven2" }
+}
+
+modifyPom {
+ project {
+     name 'Gradle Sonatype Nexus plugin'
+     description 'Gradle plugin that provides tasks for configuring and uploading artifacts to Sonatype Nexus.'
+     url 'https://github.com/bmuschko/gradle-nexus-plugin'
+     inceptionYear '2018'
+
+     scm {
+         url 'https://github.com/bmuschko/gradle-nexus-plugin'
+         connection 'scm:https://bmuschko@github.com/bmuschko/gradle-nexus-plugin.git'
+         developerConnection 'scm:git://github.com/bmuschko/gradle-nexus-plugin.git'
+     }
+
+     licenses {
+         license {
+             name 'The Apache Software License, Version 2.0'
+             url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+             distribution 'repo'
+         }
+     }
+
+     developers {
+         developer {
+             id 'bmuschko'
+             name 'Benjamin Muschko'
+             email 'benjamin.muschko@gmail.com'
+         }
+     }
+ }
+}
+
+extraArchive {
+    sources = true
+    tests = false
+    javadoc = false
+}
+nexus {
+    sign = true
+    repositoryUrl = 'http://10.71.88.241:8085/nexus/content/repositories/releases/'
+    snapshotRepositoryUrl = 'http://10.71.88.241:8085/nexus/content/repositories/snapshots/'
+}
+
+
+dependencies {
+    compile group: 'com.google.guava', name: 'guava', version:'23.0'
+    testCompile group: 'junit', name: 'junit', version:'4.12'
+    compileOnly group: 'javax.servlet', name: 'javax.servlet-api', version:'4.0.0-b07'
+}
