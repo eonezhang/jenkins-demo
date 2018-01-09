@@ -208,6 +208,32 @@ task release(group: 'Publishing',
     }
 }
 
+task patch {
+    doLast {
+        def tagVersion = project.property('tag')
+        def versionPattern = /\nversion=[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(\r?\n)/
+        // create local branch first
+        executeCommand(gitPath, 'branch', "patch-$tagVersion", "$tagVersion")
+
+        def gradlePropsFile = project.file("${project.projectDir}/gradle.properties")
+        def gradlePropsContent = gradlePropsFile.getText('ISO-8859-1')
+        def v = project.version
+        def patchVersion = bumpPatchVersion(v)
+        gradlePropsFile.write(gradlePropsContent.replaceFirst(versionPattern, "\nversion=${patchVersion}\$1"), 'ISO-8859-1')
+        executeCommand(gitPath, 'add', gradlePropsFile.toString())
+        executeCommand(gitPath, 'commit', '-m', "PATCH: Create Patch from tag $tagVersion")
+        executeCommand(gitPath, 'push', 'origin', 'patch-$tagVersion')
+
+    }
+}
+
+def bumpPatchVersion(String version) {
+    def v = version.split("\\.")
+    v[2] = Integer.parseInt(v[2]) + 1
+    v[3] = '0'
+    return v.join('.') + '-SNAPSHOT'
+}
+
 repositories {
      maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
      maven { url "http://10.71.88.241:8085/nexus/content/groups/public/" }
