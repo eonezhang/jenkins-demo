@@ -150,13 +150,18 @@ task release(group: 'Publishing',
             throw new InvalidUserDataException('Git is not available.')
         }
 
+        def version
         if (!project.hasProperty('releaseVersion') || !project.hasProperty('nextVersion')) {
-            throw new InvalidUserDataException(
-                    "Specify 'releaseVersion' and 'nextVersion' properties.${System.lineSeparator()}" +
-                            'e.g. ./gradlew release -PreleaseVersion=0.1.2 -PnextVersion=0.1.3-SNAPSHOT')
+            // throw new InvalidUserDataException(
+            //         "Specify 'releaseVersion' and 'nextVersion' properties.${System.lineSeparator()}" +
+            //                 'e.g. ./gradlew release -PreleaseVersion=0.1.2 -PnextVersion=0.1.3-SNAPSHOT')
+            version = bumpReleaseVersion(project.version)
+        } else {
+            version['releaseVersion'] = project.property('releaseVersion')
+            version['nextVersion'] = project.property('nextVersion')
         }
-        def releaseVersion = project.property('releaseVersion')
-        def nextVersion = project.property('nextVersion')
+        def releaseVersion = version['releaseVersion']
+        def nextVersion = version['nextVersion']
 
         // Validate the specified version numbers.
         if (!(releaseVersion =~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/)) {
@@ -202,11 +207,12 @@ task release(group: 'Publishing',
         executeCommand(gitPath, 'push', 'origin')
         executeCommand(gitPath, 'push', 'origin', tag)
 
-        println 'Release Done'
+        println "Release Done for version ${releaseVersion}"
     }
 }
 
-task patch {
+task patch(group: 'Development',
+           description: 'Create path or hotfix for bug(s) or short-term feature') {
     doLast {
         if (!project.hasProperty('tag')) {
             throw new InvalidUserDataException("Specify 'tag' properties.${System.lineSeparator()} e.g. ./gradlew patch -Ptag=v1.0.0.12")
@@ -224,8 +230,25 @@ task patch {
         executeCommand(gitPath, 'add', gradlePropsFile.toString())
         executeCommand(gitPath, 'commit', '-m', "PATCH: Create Patch from tag ${tagVersion}")
         executeCommand(gitPath, 'push', 'origin', "patch-${tagVersion}")
-
+        println "Patch created successfully for tag ${tagVersion}"
     }
+}
+
+def bumpReleaseVersion(String version) {
+    // 1.0.0.2-SNAPSHOT -> 1.0.0.2
+    // 1.1.0.0-SNAPSHOT
+    def versions = [:]
+    if (version.endWith("SNAPSHOT")) {
+        version = version.replace("SNAPSHOT", "")
+    }
+    versions['releaseVersion'] = version
+    def v = version.split("\\.")
+    v[1] = Integer.parseInt(v[1]) + 1
+    v[2] = '0'
+    v[3] = '0'
+    versions['nextVersion'] = v.join('.') + '-SNAPSHOT'
+
+    return versions
 }
 
 def bumpPatchVersion(String version) {
