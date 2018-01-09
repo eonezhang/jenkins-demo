@@ -183,7 +183,7 @@ task release(group: 'Publishing',
         def tag = "$rootProject.name-$releaseVersion"
         def gradlePropsFile = project.file("${project.projectDir}/gradle.properties")
         def gradlePropsContent = gradlePropsFile.getText('ISO-8859-1')
-        def versionPattern = /\nversion=[0-9]+\.[0-9]+\.[0-9]+-SNAPSHOT(\r?\n)/
+        def versionPattern = /\nversion=[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-SNAPSHOT(\r?\n)/
         assert gradlePropsContent =~ versionPattern
 
         // Update the version to the release version, commit and tag.
