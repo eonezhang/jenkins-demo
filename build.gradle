@@ -222,8 +222,8 @@ task patch {
         def patchVersion = bumpPatchVersion(v)
         gradlePropsFile.write(gradlePropsContent.replaceFirst(versionPattern, "\nversion=${patchVersion}\$1"), 'ISO-8859-1')
         executeCommand(gitPath, 'add', gradlePropsFile.toString())
-        // executeCommand(gitPath, 'commit', '-m', "PATCH: Create Patch from tag ${tagVersion}")
-        // executeCommand(gitPath, 'push', 'origin', "patch-${tagVersion}")
+        executeCommand(gitPath, 'commit', '-m', "PATCH: Create Patch from tag ${tagVersion}")
+        executeCommand(gitPath, 'push', 'origin', "patch-${tagVersion}")
 
     }
 }
