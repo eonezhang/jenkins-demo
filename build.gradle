@@ -44,9 +44,7 @@ private static String executeCommand(String[] command) {
     def proc = command.execute()
     proc.waitFor()
     if (proc.exitValue() != 0) {
-        throw new IOException(
-                "'${command}' exited with a non-zero exit code: ${proc.exitValue()}:" +
-                "${System.lineSeparator()}${proc.err.text}")
+        throw new IOException("'${command}' exited with a non-zero exit code: ${proc.exitValue()}: ${System.lineSeparator()}${proc.err.text}")
     }
 
     return proc.in.text.trim()
@@ -210,10 +208,13 @@ task release(group: 'Publishing',
 
 task patch {
     doLast {
+        if (!project.hasProperty('tag')) {
+            throw new InvalidUserDataException("Specify 'tag' properties.${System.lineSeparator()} e.g. ./gradlew patch -Ptag=v1.0.0.12")
+        }
         def tagVersion = project.property('tag')
         def versionPattern = /\nversion=[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(\r?\n)/
         // create local branch first
-        executeCommand(gitPath, 'branch', "patch-$tagVersion", "$tagVersion")
+        executeCommand(gitPath, 'branch', "patch-${tagVersion}", "${tagVersion}")
 
         def gradlePropsFile = project.file("${project.projectDir}/gradle.properties")
         def gradlePropsContent = gradlePropsFile.getText('ISO-8859-1')
@@ -221,8 +222,8 @@ task patch {
         def patchVersion = bumpPatchVersion(v)
         gradlePropsFile.write(gradlePropsContent.replaceFirst(versionPattern, "\nversion=${patchVersion}\$1"), 'ISO-8859-1')
         executeCommand(gitPath, 'add', gradlePropsFile.toString())
-        executeCommand(gitPath, 'commit', '-m', "PATCH: Create Patch from tag $tagVersion")
-        executeCommand(gitPath, 'push', 'origin', 'patch-$tagVersion')
+        executeCommand(gitPath, 'commit', '-m', "PATCH: Create Patch from tag ${tagVersion}")
+        executeCommand(gitPath, 'push', 'origin', "patch-${tagVersion}")
 
     }
 }
