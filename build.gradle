@@ -220,12 +220,15 @@ task patch(group: 'Development',
         def tagVersion = project.property('tag')
         def versionPattern = /\nversion=[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(\r?\n)/
         // create local branch first
+        executeCommand(gitPath, 'fetch', '--all')
         executeCommand(gitPath, 'stash')
-        executeCommand(gitPath, 'checkout', '-b', "patch-${tagVersion}", "${tagVersion}")
-
+        executeCommand(gitPath, 'branch', "patch-${tagVersion}", "${tagVersion}")
+        executeCommand(gitPath, 'checkout', "patch-${tagVersion}")
+        
         def gradlePropsFile = project.file("${project.projectDir}/gradle.properties")
         def gradlePropsContent = gradlePropsFile.getText('ISO-8859-1')
         def v = project.version
+        println "Current Version is ${v}"
         def patchVersion = bumpPatchVersion(v)
         gradlePropsFile.write(gradlePropsContent.replaceFirst(versionPattern, "\nversion=${patchVersion}\$1"), 'ISO-8859-1')
         executeCommand(gitPath, 'add', gradlePropsFile.toString())
