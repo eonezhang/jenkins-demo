@@ -220,6 +220,7 @@ task patch(group: 'Development',
         def tagVersion = project.property('tag')
         def versionPattern = /\nversion=[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(\r?\n)/
         // create local branch first
+        executeCommand(gitPath, 'stash')
         executeCommand(gitPath, 'checkout', '-b', "patch-${tagVersion}", "${tagVersion}")
 
         def gradlePropsFile = project.file("${project.projectDir}/gradle.properties")
