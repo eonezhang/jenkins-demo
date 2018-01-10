@@ -227,7 +227,7 @@ task patch(group: 'Development',
         
         def gradlePropsFile = project.file("${project.projectDir}/gradle.properties")
         def gradlePropsContent = gradlePropsFile.getText('ISO-8859-1')
-        def v = project.version
+        def v = readVersion()
         println "Current Version is ${v}"
         def patchVersion = bumpPatchVersion(v)
         gradlePropsFile.write(gradlePropsContent.replaceFirst(versionPattern, "\nversion=${patchVersion}\$1"), 'ISO-8859-1')
@@ -235,6 +235,19 @@ task patch(group: 'Development',
         executeCommand(gitPath, 'commit', '-m', "PATCH: Create Patch from tag ${tagVersion}")
         executeCommand(gitPath, 'push', 'origin', "patch-${tagVersion}")
         println "Patch created successfully for tag ${tagVersion}"
+    }
+}
+
+def readVersion() {
+    def gradlePropsFile = project.file("${project.projectDir}/gradle.properties")
+    def gradlePropsContent = gradlePropsFile.getText('ISO-8859-1')
+    def versionPattern = /\nversion=[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(\r?\n)/
+    def m = gradlePropsContent =~ versionPattern
+    def v = m.find() ? m.group().trim() : ""
+    if (v != "") {
+        return v.trim().replace("version=", "")
+    } else {
+        throw new InvalidUserDataException("Please verify the version in gradle.properties file is match [0-9]+\.[0-9]+\.[0-9]+\.[0-9]")
     }
 }
 
