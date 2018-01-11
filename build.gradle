@@ -247,7 +247,7 @@ def readVersion() {
     if (v != "") {
         return v.trim().replace("version=", "")
     } else {
-        throw new InvalidUserDataException("Please verify the version in gradle.properties file is match [0-9]+\.[0-9]+\.[0-9]+\.[0-9]")
+        throw new InvalidUserDataException("Please verify the version in gradle.properties file is match [0-9]+[0-9]+[0-9]+[0-9]")
     }
 }
 
