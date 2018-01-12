@@ -259,16 +259,14 @@ def readVersion() {
 
 def bumpReleaseVersion(String version) {
     // 1.0.0.2-SNAPSHOT -> 1.0.0.2
-    // 1.1.0.0-SNAPSHOT
+    // 1.0.0.3-SNAPSHOT
     def versions = [:]
     if (version.endsWith("-SNAPSHOT")) {
         version = version.replace("-SNAPSHOT", "")
     }
     versions['releaseVersion'] = version
     def v = version.split("\\.")
-    v[1] = Integer.parseInt(v[1]) + 1
-    v[2] = '0'
-    v[3] = '0'
+    v[3] = Integer.parseInt(v[1]) + 1
     versions['nextVersion'] = v.join('.') + '-SNAPSHOT'
 
     return versions
@@ -295,9 +293,9 @@ modifyPom {
      inceptionYear '2018'
 
      scm {
-         url 'https://github.com/bmuschko/gradle-nexus-plugin'
-         connection 'scm:https://bmuschko@github.com/bmuschko/gradle-nexus-plugin.git'
-         developerConnection 'scm:git://github.com/bmuschko/gradle-nexus-plugin.git'
+         url 'https://github.com/eonezhang/jenkins-demo'
+         connection 'scm:https://bmuschko@github.com/eonezhang/jenkins-demo'
+         developerConnection 'scm:git://github.com/eonezhang/jenkins-demo.git'
      }
 
      licenses {
@@ -375,9 +373,9 @@ publishing {
                 asNode().children().last() + {
                     resolveStrategy = Closure.DELEGATE_FIRST
                     scm {
-                        url 'https://github.com/line/armeria'
-                        connection 'scm:git:https://github.com/line/armeria.git'
-                        developerConnection 'scm:git:ssh://git@github.com/line/armeria.git'
+                        url 'https://github.com/eonezhang/jenkins-demo'
+                        connection 'scm:git:https://github.com/eonezhang/jenkins-demo.git'
+                        developerConnection 'scm:git:ssh://git@github.com/eonezhang/jenkins-demo.git'
                     }
 
                     dependencies {
