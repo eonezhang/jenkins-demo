@@ -15,6 +15,7 @@ apply plugin: 'checkstyle'
 apply plugin: "jacoco"
 apply plugin: 'com.bmuschko.nexus'
 apply plugin: 'com.google.osdetector'
+apply plugin: 'maven-publish'
 
 description = """Jenkins Build Demo"""
 
@@ -238,6 +239,11 @@ task patch(group: 'Development',
     }
 }
 
+task copyCompileDependencies(type: Copy) {
+    from configurations.compile
+    into "${project.buildDir}/allLibs"
+}
+
 def readVersion() {
     def gradlePropsFile = project.file("${project.projectDir}/gradle.properties")
     def gradlePropsContent = gradlePropsFile.getText('ISO-8859-1')
@@ -323,9 +329,99 @@ nexus {
     snapshotRepositoryUrl = 'http://10.71.88.241:8085/nexus/content/repositories/snapshots/'
 }
 
+configurations {
+    compile.transitive = true
+}
 
 dependencies {
     compile group: 'com.google.guava', name: 'guava', version:'23.0'
     testCompile group: 'junit', name: 'junit', version:'4.12'
     compileOnly group: 'javax.servlet', name: 'javax.servlet-api', version:'4.0.0-b07'
+}
+
+task apiJar(type: Jar) {
+    baseName "publishing-api"
+    from sourceSets.main.output
+    exclude '**/impl/**'
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+}
+
+publishing {
+    repositories {
+        maven {
+            url "$buildDir/repo"
+        }
+    }
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            artifact sourceJar {
+                classifier 'sources'
+            }
+
+            pom.withXml {
+                asNode().appendNode('description', 'sample description')
+            }
+        }
+
+        api(MavenPublication) {
+            artifactId 'jenkins-demo-api'
+            artifact apiJar
+            pom.withXml {
+                asNode().children().last() + {
+                    resolveStrategy = Closure.DELEGATE_FIRST
+                    scm {
+                        url 'https://github.com/line/armeria'
+                        connection 'scm:git:https://github.com/line/armeria.git'
+                        developerConnection 'scm:git:ssh://git@github.com/line/armeria.git'
+                    }
+
+                    dependencies {
+                        def writeDeps = { cfg, depScope -> 
+                            cfg.dependencies.each {dep -> 
+                                dependency {
+                                    if (dep instanceof ProjectDependency) {
+                                        groupId dep.group
+                                        artifactId dep.dependencyProject.archiveBaseName
+                                        version dep.version ?: dep.dependencyProject.version
+                                    } else {
+                                        groupId dep.group
+                                        artifactId dep.name
+                                        if (dep.version) {
+                                            version dep.version
+                                        }
+
+                                        if (dep.artifacts.find() instanceof DependencyArtifact && dep.artifacts.find().classifier) {
+                                            classifier dep.artifacts.find().classifier
+                                        }
+                                    }
+
+                                    if (depScope && depScope != 'compile') {
+                                        scope depScope
+                                    }
+
+                                    if (dep.hasProperty('optional') && dep.optional) {
+                                        optional true
+                                    }
+
+                                    if (!dep.excludeRules.empty) {
+                                        exclusion {
+                                            group rule.group
+                                            artifactId rule.module
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        writeDeps(configurations.compile, 'compile')
+                        writeDeps(configurations.runtime, 'runtime')
+                    }
+                }
+            }
+        }
+    }
 }
